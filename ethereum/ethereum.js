@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
-import {View, Text} from 'react-native';
+import {View, Text, StyleSheet} from 'react-native';
+
+
+
 type Props = {};
 export default class EthereumComponent extends Component<Props> {
     static navigationOptions = ({ navigation }) => ({
@@ -17,3 +20,7 @@ export default class EthereumComponent extends Component<Props> {
         )
     }
 }
+
+const styles = StyleSheet.create({
+
+});

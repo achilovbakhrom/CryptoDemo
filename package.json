@@ -49,7 +49,8 @@
     "bufferutil": "^4.0.1",
     "utf-8-validate": "^5.0.2",
     "asyncstorage-down": "^4.1.2",
-    "os": "^0.1.1"
+    "os": "^0.1.1",
+    "hdkey": "^1.1.0"
   },
   "devDependencies": {
     "babel-core": "^7.0.0-bridge.0",

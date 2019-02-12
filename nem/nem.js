@@ -25,6 +25,11 @@ export default class NEMComponent extends Component<Props> {
 
 let styles = StyleSheet.create({
     bg: {
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        alignItems: 'center'
+    },
+    topTitle: {
+        marginTop: 20,
+        fontSize: 18
     }
 });

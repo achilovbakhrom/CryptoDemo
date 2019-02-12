@@ -1,7 +1,6 @@
 import bip39 from 'react-native-bip39';
 import bitcoin from 'react-native-bitcoinjs-lib';
 import crypto from 'crypto';
-
 import EventEmitter from 'events';
 
 import Constants from './constants';
@@ -17,9 +16,7 @@ class Wallet extends EventEmitter {
         this.__address = info.address;
         this.__wif = info.wif;
         this.__network = info.network;
-
         this.__password = info.password || undefined;
-
         this.__utxos = [];
 
     }
@@ -107,6 +104,7 @@ class Wallet extends EventEmitter {
         const txb = new bitcoin.TransactionBuilder(network);
 
         let current = 0;
+
         for (const utx of this.utxos) {
 
             txb.addInput(utx.tx_hash_big_endian, utx.tx_output_n);
@@ -116,10 +114,14 @@ class Wallet extends EventEmitter {
         }
 
         txb.addOutput(address, satoshis);
-
         const change = current - (satoshis + fee);
+        console.log(address);
+        console.log(this.address)
+        console.log(current);
+        console.log(change)
         if (change) txb.addOutput(this.address, change);
 
+        console.log('aft')
 
         const wif = this.__password ? this.readDecrypted(password) : this.wif;
         const key = bitcoin.ECPair.fromWIF(wif, network);
@@ -127,7 +129,6 @@ class Wallet extends EventEmitter {
         txb.sign(0, key);
 
         const raw = txb.build().toHex();
-
         return bnet.api.broadcast(raw);
     }
 
@@ -151,13 +152,16 @@ class Wallet extends EventEmitter {
 
     static create(name, mnemonic) {
 
-        const seed = bip39.mnemonicToSeed('Project nasty dose grunt ritual price gap prison degree agent satisfy across');
-        // const seed = bip39.mnemonicToSeed(mnemonic);
-
+        const seed = bip39.mnemonicToSeed('project nasty dose grunt ritual price gap prison degree agent satisfy across');
+        // const seed = bip39.mnemonicToSeed(mnemonic); // random mnemonics
         const master = bitcoin.HDNode.fromSeedBuffer(seed, bnet.current);
         const derived = master.derivePath(Wallet.Defaults.Path);
+        // x_pub - success
+        console.log(derived.neutered().toBase58());
         const address = derived.getAddress();
         const wif = derived.keyPair.toWIF();
+
+
 
         return new Wallet({
             name: name,
@@ -192,24 +196,27 @@ class Wallet extends EventEmitter {
 
 
     toObject() {
-
         const obj = {
             name: this.name,
             address: this.address,
             wif: this.wif,
             network: this.network,
         };
-
         if (this.__password) obj.password = this.__password;
-
         return obj;
     }
-
 }
+
+// Wallet.Defaults = {
+//     Encryption: 'aes-256-cbc',
+//     Path: "m/44'/0'/0'/0/0",
+//     DBFileName: 'wallets',
+// };
+
 
 Wallet.Defaults = {
     Encryption: 'aes-256-cbc',
-    Path: "m/44'/0'/0'/0/0",
+    Path: "m/0'",
     DBFileName: 'wallets',
 };
 

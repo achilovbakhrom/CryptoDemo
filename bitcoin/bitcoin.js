@@ -1,9 +1,11 @@
 import React, {Component} from 'react';
-import {Modal, View, Text, TouchableOpacity, StyleSheet, FlatList, TouchableHighlight, TextInput} from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet, FlatList, TouchableHighlight, TextInput, Button} from 'react-native';
 // import Modal from 'react-native-modal';
-type Props = {};
-import Wallet from '../utils/BitcoinWallet/wallet';
 
+type Props = {};
+
+import Wallet from '../utils/BitcoinWallet/wallet';
+import net from '../utils/BitcoinWallet/network';
 import Constants from '../utils/BitcoinWallet/constants';
 
 export default class BitcoinComponent extends Component<Props> {
@@ -27,16 +29,84 @@ export default class BitcoinComponent extends Component<Props> {
         this.passwordTextChange = this.passwordTextChange.bind(this);
         this.confirmPasswordTextChange = this.confirmPasswordTextChange.bind(this);
         this.nameChange = this.nameChange.bind(this);
-
+        this.showPayments = this.showPayments.bind(this);
+        this.hidePayments = this.hidePayments.bind(this);
         this.state = {
             createModalVisibility: false,
             errorModalVisibility: false,
             password: '',
             confirmPassword: '',
             name: '',
-            wallets: [],
-            errorMessage: ''
+            errorMessage: '',
+            selectedWalletIndex: 0,
+            selectedWallet: null,
+            showDetailsModal: false,
+            payments: []
         }
+    }
+
+    componentDidMount() {
+
+        Wallet.all().then((wallets) => {
+
+            this.wallets = wallets;
+            this.setState({
+                wallets: wallets,
+            });
+            console.log("bfore test");
+            console.log(wallets);
+            let a = this.wallets[6].send(0.0, this.wallets[0].address, 0, '111');
+            console.log(a);
+            console.log("test1");
+
+            // net.api.getTransactions(wallets.map(w => w.address)).then((txs) => {
+            //     this.transactions = txs;
+            // });
+
+
+            // net.api.getTransactions(['xpub69VALARCTZ12pptZKtmCvUmDkgwd9TLn69cR8mSSfLJUyeA3hvevnTd4hwQ5BzHyDrE9ao9zfkUBkPgJsyC5H1z336AhTw9L72M7TiYoXG5']).then((txs) => {
+            //     console.log('begin');
+            //     console.log(txs);
+            //     console.log('end');
+            //     this.transactions = txs;
+            // });
+
+        });
+    }
+
+    set transactions(txs) {
+        this._transactions = txs;
+        const addressToWallet = {};
+        this.wallets.forEach((w) => {
+            addressToWallet[w.address] = w;
+        });
+        const payments = [];
+        // transactions come in the order of the addresses passed
+
+        txs.forEach((tx, i) => {
+            const wallet = this.wallets[i];
+            console.log(tx);
+            tx.out.forEach((out, j) => {
+                payments.push({
+                    key: `${i}/${j}`,
+                    name: wallet ? wallet.name : out.addr,
+                    address: out.addr,
+                    inflow: wallet !== undefined,
+                    time: new Date(tx.time * 1000).toDateString(),
+                    coins: out.value / 100000000,
+                    hash: tx.hash,
+                });
+            });
+        });
+
+        this.setState({
+            payments: payments
+        });
+    }
+
+    get transactions() {
+        if (!this._transactions) this._transactions = [];
+        return this._transactions;
     }
 
     showModal() {
@@ -71,8 +141,20 @@ export default class BitcoinComponent extends Component<Props> {
                 createModalVisibility: false
             });
             const mnemonic = Wallet.generate();
-            const wallet = Wallet.create(name, mnemonic).encrypt(password);
-            this.__addWallet(wallet, mnemonic)
+
+//             let seed16to64bytes = someMnemonicObject.toSeedBuffer(); // BIP39 gives 64 byte hash of the phrase
+//             let xprvString = bitcoin.HDNode.fromSeedBuffer(seed16to64bytes).toBase58();
+// // ----------------------------------------------------
+// // 2 levels of 0' here as per BIP44 spec
+//             let xpubString = bitcoin.HDNode.fromBase58(xprvString).derivePath("m/44'/0'/0'").neutered().toBase58();
+// // no m/ since this xpub is the 3rd layer, not the top layer of the HD tree
+//             let address = bitcoin.HDNode.fromBase58(xpubString).derivePath("0/0").getAddress();
+
+            mnemonic.then((mnemonic) => {
+
+                const wallet = Wallet.create(name, mnemonic).encrypt(password);
+                this.__addWallet(wallet, mnemonic)
+            });
         } else {
             this.setState({
                 errorMessage: 'Name empty or password and confirm password fields are not equal',
@@ -114,6 +196,60 @@ export default class BitcoinComponent extends Component<Props> {
         })
     }
 
+    showPayments(index) {
+        this.setState({
+            selectedWalletIndex: index,
+            showDetailsModal: true,
+            selectedWallet: this.state.wallets[index]
+        })
+    }
+
+    paymentsModalContent() {
+
+        let payments = [];
+
+        this.state.payments.forEach((item) => {
+            if (this.state.selectedWallet && this.state.selectedWallet.address && item.address === this.state.selectedWallet.address) {
+                payments.push(item);
+            }
+        });
+
+        console.log(this.state.payments);
+
+        return (
+            <Modal
+                transparent={false}
+                visible={this.state.showDetailsModal}>
+                <View>
+                    <View style={styles.topText}>
+                        <Button
+                            title="Close"
+                            color="#841584"
+                            onPress={this.hidePayments} />
+                    </View>
+                    <View>
+                        <Text> Transaction {this.state.selectedWallet && this.state.selectedWallet.__address}</Text>
+                    </View>
+                    <FlatList
+                        style={styles.list}
+                        data={payments}
+                        extraData={this.state.payments}
+                        renderItem={({item}) => {
+                            return (
+                                <Text style={styles.unselectedListItem}> {item.key + " " + item.name + " " + item.address}</Text>
+                            )
+                        }}
+                    />
+                </View>
+            </Modal>
+        )
+    }
+
+    hidePayments() {
+        this.setState({
+            showDetailsModal: false
+        })
+    }
 
     createModalContent() {
         return (
@@ -297,13 +433,20 @@ export default class BitcoinComponent extends Component<Props> {
                 <FlatList
                     style={styles.list}
                     data={this.state.wallets}
-                    renderItem={(item) => {
-                        console.log(item);
-                        return (<Text> {item.item.__name + " " + item.item.__address}</Text>)
+                    extraData={this.state.selectedWallet}
+                    renderItem={({item, index}) => {
+                        console.log(this.state.selectedWallet === index);
+                        return (
+                            <TouchableOpacity
+                                onPress={() => this.showPayments(index)}>
+                                <Text style={this.state.selectedWalletIndex === index ? styles.selectedListItem : styles.unselectedListItem}> {item.__name + " " + item.__address}</Text>
+                            </TouchableOpacity>
+                        )
                     }}
                 />
                 {this.errorModalContent()}
                 {this.createModalContent()}
+                {this.paymentsModalContent()}
             </View>
         )
     }
@@ -315,7 +458,6 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         alignItems: 'stretch'
     },
-
     button: {
         margin: 10,
         padding: 10,
@@ -335,5 +477,22 @@ const styles = StyleSheet.create({
         marginRight: 0,
         padding: 0,
         backgroundColor: '#A1A1A1'
+    },
+    selectedListItem: {
+        padding: 10,
+        marginBottom: 4,
+        borderWidth: 1,
+        borderColor: 'gray',
+        backgroundColor: 'red'
+    },
+    unselectedListItem: {
+        padding: 10,
+        marginBottom: 4,
+        borderWidth: 1,
+        borderColor: 'gray',
+        backgroundColor: 'aqua'
+    },
+    topText: {
+        marginTop: 20
     }
 });
