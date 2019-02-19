@@ -2,6 +2,9 @@ import React, {Component} from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet, FlatList, TouchableHighlight, TextInput, Button} from 'react-native';
 // import Modal from 'react-native-modal';
 
+var explorers = require('bitcore-explorers');
+var insight = new explorers.Insight();
+
 type Props = {};
 
 import Wallet from '../utils/BitcoinWallet/wallet';
@@ -47,17 +50,47 @@ export default class BitcoinComponent extends Component<Props> {
 
     componentDidMount() {
 
-        Wallet.all().then((wallets) => {
+        Wallet.sendTransaction()
 
-            this.wallets = wallets;
-            this.setState({
-                wallets: wallets,
-            });
-            console.log("bfore test");
-            console.log(wallets);
-            let a = this.wallets[6].send(0.0, this.wallets[0].address, 0, '111');
-            console.log(a);
-            console.log("test1");
+        // Wallet.all().then((wallets) => {
+        //
+        //     this.wallets = wallets;
+        //     this.setState({
+        //         wallets: wallets,
+        //     });
+            // console.log("bfore test");
+            // console.log(wallets);
+            // let a = this.wallets[6].send(0.0, this.wallets[0].address, 0, '111');
+            // console.log(a);
+            // console.log("test1");
+            // console.log(this.wallets);
+            // console.log("begin");
+            // console.log(insight);
+
+            // "mkoA3oosAKnqhC67pRxeqHjgqjSjoadSHy"
+            // "13mtk1K3b1hTcT42WPtvngazAbR66NoA8w"
+
+            //"xpub xpub69VALARCTZ12pptZKtmCvUmDkgwd9TLn69cR8mSSfLJUyeA3hvevnTd4hwQ5BzHyDrE9ao9zfkUBkPgJsyC5H1z336AhTw9L72M7TiYoXG5"
+            // insight.getUtxos('1CWCbxhnVavxxzzv49EwaQBvBbnJTVjpxe', function(err, utxos) {
+            //     if (err) {
+            //         console.log("error");
+            //         console.log(err)
+            //     } else {
+            //         console.log("utxos");
+            //         console.log(utxos)
+            //     }
+            // });
+
+            // insight.getUnspentUtxos('1JVNvRDPNLcxV3PigTg8LRTE8kKv4rXdua', function(err, utxos) {
+            //     if (err) {
+            //         console.log("error");
+            //         console.log(err)
+            //     } else {
+            //         console.log("utxos");
+            //         console.log(utxos)
+            //     }
+            // });
+
 
             // net.api.getTransactions(wallets.map(w => w.address)).then((txs) => {
             //     this.transactions = txs;
@@ -71,7 +104,7 @@ export default class BitcoinComponent extends Component<Props> {
             //     this.transactions = txs;
             // });
 
-        });
+        // });
     }
 
     set transactions(txs) {

@@ -6,7 +6,9 @@ import EventEmitter from 'events';
 import Constants from './constants';
 
 import bnet from './network';
-import Database from './database';
+import Database from '../database';
+import axios from 'axios';
+
 
 class Wallet extends EventEmitter {
 
@@ -116,12 +118,12 @@ class Wallet extends EventEmitter {
         txb.addOutput(address, satoshis);
         const change = current - (satoshis + fee);
         console.log(address);
-        console.log(this.address)
+        console.log(this.address);
         console.log(current);
-        console.log(change)
+        console.log(change);
         if (change) txb.addOutput(this.address, change);
 
-        console.log('aft')
+        console.log('aft');
 
         const wif = this.__password ? this.readDecrypted(password) : this.wif;
         const key = bitcoin.ECPair.fromWIF(wif, network);
@@ -130,6 +132,51 @@ class Wallet extends EventEmitter {
 
         const raw = txb.build().toHex();
         return bnet.api.broadcast(raw);
+    }
+
+
+    static sendTransaction() {
+        Wallet.collectUtxos((satoshis) => {
+
+            bnet.api.getFee().then((fee) => {
+                console.log("fee");
+                console.log(fee);
+                const satoshis = Math.round(0.00002 * Constants.Bitcoin.Satoshis);
+
+                let key = bitcoin.ECPair.fromWIF("L47iPTNUuNLPoHWKc42yaqE4fXag4Yi86KMvcbyb7TLJRm6ESSzD", bitcoin.networks.bitcoin);
+                console.log("pub"); //The above should output: 17hFoVScNKVDfDTT6vVhjYwvCu6iDEiXC4
+                console.log(key.getAddress().toString()); //The above should output: 17hFoVScNKVDfDTT6vVhjYwvCu6iDEiXC4
+                let tx = new bitcoin.TransactionBuilder();
+                tx.addInput("6584d44d8c205f3a33a5093fbb53f501a5a087344d6416b81e5ac74007bd22d1", 0);
+                tx.addOutput("17CrdRH4mWgCKwKJKYPU4CZrT89YfFEH2n", satoshis); // 1000 satoshis will be taken as fee.
+                tx.addOutput("16z46CESbJTEAFZdvm47w1rqzu4F7HQc8", Math.round(150000 - satoshis + satoshis*fee)); // 1000 satoshis will be taken as fee.
+                tx.sign(0, key);
+                console.log("before");
+                let raw = tx.build().toHex();
+                console.log(raw);
+                console.log("after");
+                bnet.api.broadcast(raw);
+
+            }).catch((e) => {
+                console.log('Could not get fee ', e);
+            });
+
+
+        });
+    }
+
+
+    static collectUtxos(callback) {
+
+        axios.get('https://blockchain.info/address/177xBhHZN3bGCH8c7GcVDv4gQ2bYGGvT3v?format=json')
+            .then(res => {
+                console.log(res.data);
+                let satoshis = parseFloat(res.data.final_balance)
+                // console.log("received");
+                // console.log(balance/Constants.Bitcoin.Satoshis);
+                callback(satoshis);
+                // console.log("end")
+            })
     }
 
 
@@ -156,6 +203,7 @@ class Wallet extends EventEmitter {
         // const seed = bip39.mnemonicToSeed(mnemonic); // random mnemonics
         const master = bitcoin.HDNode.fromSeedBuffer(seed, bnet.current);
         const derived = master.derivePath(Wallet.Defaults.Path);
+        // console.log(derived.toBase58());
         // x_pub - success
         console.log(derived.neutered().toBase58());
         const address = derived.getAddress();

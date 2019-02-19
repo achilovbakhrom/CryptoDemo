@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import {View, Text, StyleSheet} from 'react-native';
-
+import Wallet from '../utils/EtherWallet/wallet';
 
 
 type Props = {};
@@ -12,6 +12,11 @@ export default class EthereumComponent extends Component<Props> {
             backgroundColor:'white',
         },
     });
+
+    componentDidMount(){
+        Wallet.createAccount("jjjasdfdsaokdkrtikertkfbvhdjskdeasfirjdi");
+    }
+
     render() {
         return(
             <View>

@@ -7,15 +7,16 @@ import {Provider} from 'react-redux';
 import store from './redux/store';
 
 const Temp = createDrawerNavigator({
-    BITCOIN: {
-        screen: BitcoinComponent
-    },
     ETHEREUM: {
         screen: EthereumComponent
     },
     NEM: {
         screen: NEMComponent
     },
+    BITCOIN: {
+        screen: BitcoinComponent
+    },
+
 });
 
 const AppContent = createAppContainer(Temp);
